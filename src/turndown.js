@@ -90,7 +90,7 @@ export default function TurndownService (options) {
     bulletListMarker: '*',
     codeBlockStyle: 'indented',
     fence: '```',
-    emDelimiter: '_',
+    emDelimiter: '*',
     strongDelimiter: '**',
     linkStyle: 'inlined',
     linkReferenceStyle: 'full',
