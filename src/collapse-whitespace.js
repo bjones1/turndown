@@ -35,7 +35,7 @@ function collapseWhitespace (options) {
   var isBlock = options.isBlock
   var isVoid = options.isVoid
   var isPre = options.isPre || function (node) {
-    return node.nodeName === 'PRE'
+    return node.nodeName === 'PRE' || node.nodeName === 'WC-MERMAID'
   }
   var renderAsPure = options.renderAsPure
 
