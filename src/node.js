@@ -25,8 +25,8 @@ export default function Node (node, options) {
     }
   }
 
-  // Provide a means to escape HTML to confirm to Markdown's requirements. This happens only inside preformatted code blocks, where `collapseWhitespace` avoids removing newlines.
-  node.cleanOuterHTML = () => node.outerHTML.replace(/\n/g, '&#10;').replace(/\r/g, '&#13;')
+  // Provide a means to escape HTML to conform to Markdown's requirements. This happens only inside preformatted code blocks, where `collapseWhitespace` avoids removing newlines.
+  node.cleanOuterHTML = () => node.outerHTML.replace(/\n\n/g, '\n&#10;').replace(/\r\r/g, '\r&#13;')
   // Output the provided string if `node.renderAsPure`; otherwise, output `node.outerHTML`.
   node.ifPure = (str) => node.renderAsPure ? str : node.cleanOuterHTML()
   return node

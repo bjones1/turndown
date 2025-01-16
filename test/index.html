@@ -1275,7 +1275,8 @@ code
   </div>
   <pre class="expected">&lt;code&gt;&lt;i&gt;Test 1&lt;/i&gt;&lt;/code&gt;
 
-&lt;pre&gt;&lt;code&gt;&lt;i&gt;Test&amp;#10;&amp;#10;2&lt;/i&gt;&lt;/code&gt;&lt;/pre&gt;</pre>
+&lt;pre&gt;&lt;code&gt;&lt;i&gt;Test
+&amp;#10;2&lt;/i&gt;&lt;/code&gt;&lt;/pre&gt;</pre>
 </div>
     
 <div class="case" data-name="faithful mode, fenced pre/code block with language" data-options='{"codeBlockStyle": "fenced", "renderAsPure": false}'>
@@ -1284,7 +1285,8 @@ code
 
 1</i></code></pre>
   </div>
-  <pre class="expected">&lt;pre&gt;&lt;code class="language-ruby"&gt;&lt;i&gt;Test&amp;#10;&amp;#10;1&lt;/i&gt;&lt;/code&gt;&lt;/pre&gt;</pre>
+  <pre class="expected">&lt;pre&gt;&lt;code class="language-ruby"&gt;&lt;i&gt;Test
+&amp;#10;1&lt;/i&gt;&lt;/code&gt;&lt;/pre&gt;</pre>
 </div>
 
 <div class="case" data-name="ol, faithful mode" data-options='{"renderAsPure": false}'>
