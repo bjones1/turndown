@@ -39,12 +39,12 @@ export default function Node (node, options) {
   }
 
   // Provide a means to escape HTML to conform to Markdown's requirements:
-  // inside raw HTML, one
+  // inside raw HTML, one
   // [end condition](https://spec.commonmark.org/0.31.2/#html-blocks) is a blank
   // line (two consecutive newlines). To avoid this, escape newline pairs. Note:
   // this is a bit conservative, since some tags end only with a closing tag,
   // not on a newline.
-  node.cleanOuterHTML = () => node.outerHTML.replace(/\n\n/g, '\n&#10;').replace(/\r\r/g, '\r&#13;')
+  node.cleanOuterHTML = () => node.outerHTML.replace(/\n\n/g, '\n&#10;').replace(/\r\r/g, '\r&#13;').replace(/\n\r\n\r/g, '\n\r&#10;&#13;').replace(/\r\n\r\n/g, '\r\n&#13;&#10;')
   // Output the provided string if `node.renderAsPure`; otherwise, output
   // `node.outerHTML`.
   node.ifPure = (str) => node.renderAsPure ? str : node.cleanOuterHTML()
