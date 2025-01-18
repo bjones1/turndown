@@ -59,25 +59,27 @@ var escapes = [
   [/^>/g, '\\>'],
   [/_/g, '\\_'],
   [/^(\d+)\. /g, '$1\\. '],
-  // Per [section 6.6 of the CommonMark spec](https://spec.commonmark.org/0.30/#raw-html),
-  // Raw HTML, CommonMark recognizes and passes through HTML-like tags and
-  // their contents. Therefore, Turndown needs to escape text that would parse
-  // as an HTML-like tag. This regex recognizes these tags and escapes them by
+  // Per
+  // [section 6.6 of the CommonMark spec](https://spec.commonmark.org/0.30/#raw-html),
+  // Raw HTML, CommonMark recognizes and passes through HTML-like tags and their
+  // contents. Therefore, Turndown needs to escape text that would parse as an
+  // HTML-like tag. This regex recognizes these tags and escapes them by
   // inserting a leading backslash.
   [new RegExp(HTMLTAG, 'g'), '\\$&'],
-  // Likewise, [section 4.6 of the CommonMark spec](https://spec.commonmark.org/0.30/#html-blocks),
+  // Likewise,
+  // [section 4.6 of the CommonMark spec](https://spec.commonmark.org/0.30/#html-blocks),
   // HTML blocks, requires the same treatment.
   //
   // This regex was copied from `commonmark.js/lib/blocks.js`, the
   // `reHtmlBlockOpen` variable. We only need regexps for patterns not matched
   // by the previous pattern, so this doesn't need all expressions there.
   //
-  // TODO: this is too aggressive; it should only recognize this pattern at
-  // the beginning of a line of CommonnMark source; these will recognize the
-  // pattern at the beginning of any inline or block markup. The approach I
-  // tried was to put this in `commonmark-rules.js` for the `paragraph` and
-  // `heading` rules (the only block beginning-of-line rules). However, text
-  // outside a paragraph/heading doesn't get escaped in this case.
+  // TODO: this is too aggressive; it should only recognize this pattern at the
+  // beginning of a line of CommonnMark source; these will recognize the pattern
+  // at the beginning of any inline or block markup. The approach I tried was to
+  // put this in `commonmark-rules.js` for the `paragraph` and `heading` rules
+  // (the only block beginning-of-line rules). However, text outside a
+  // paragraph/heading doesn't get escaped in this case.
   [/^<(?:script|pre|textarea|style)(?:\s|>|$)/i, '\\$&'],
   [/^<[/]?(?:address|article|aside|base|basefont|blockquote|body|caption|center|col|colgroup|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|frame|frameset|h[123456]|head|header|hr|html|iframe|legend|li|link|main|menu|menuitem|nav|noframes|ol|optgroup|option|p|param|section|source|summary|table|tbody|td|tfoot|th|thead|title|tr|track|ul)(?:\s|[/]?[>]|$)/i, '\\$&']
 ]
@@ -98,9 +100,15 @@ export default function TurndownService (options) {
     linkReferenceStyle: 'full',
     br: '  ',
     preformattedCode: false,
-    // Should the output be pure (pure Markdown, with no HTML blocks; this discards any HTML input that can't be represented in "pure" Markdown) or faithful (any input HTML that can't be exactly duplicated using Markdwon remains HTML is the resulting output)? This is `false` by default, following the original author's design.
+    // Should the output be pure (pure Markdown, with no HTML blocks; this
+    // discards any HTML input that can't be represented in "pure" Markdown) or
+    // faithful (any input HTML that can't be exactly duplicated using Markdwon
+    // remains HTML is the resulting output)? This is `false` by default,
+    // following the original author's design.
     renderAsPure: true,
-    // An array of [word wrap column, minimum word wrap width] indicates that the output should be word wrapped based on these parameters; otherwise, en empty list indicates no wrapping.
+    // An array of \[word wrap column, minimum word wrap width\] indicates that
+    // the output should be word wrapped based on these parameters; otherwise,
+    // en empty list indicates no wrapping.
     wordWrap: [],
     blankReplacement: function (content, node) {
       return node.isBlock ? '\n\n' : ''
@@ -109,7 +117,8 @@ export default function TurndownService (options) {
       return node.isBlock ? '\n\n' + node.outerHTML + '\n\n' : node.outerHTML
     },
     defaultReplacement: function (content, node, options) {
-      // A hack: for faithful output, always produce the HTML, rather than the content. To get this, tell the node it's impure.
+      // A hack: for faithful output, always produce the HTML, rather than the
+      // content. To get this, tell the node it's impure.
       node.renderAsPure = options.renderAsPure
       return node.isBlock ? '\n\n' + node.ifPure(content) + '\n\n' : node.ifPure(content)
     }
@@ -233,7 +242,8 @@ const wrapContent = (content, node, options) => {
   if (!options.wordWrap.length) {
     return content
   }
-  // If the parent node is leaf or container block, then wrap it; otherwise, leave it unchanged. Exceptions: don't wrap code blocks.
+  // If the parent node is leaf or container block, then wrap it; otherwise,
+  // leave it unchanged. Exceptions: don't wrap code blocks.
   if (!node.isCode && (node.parentNode.nodeName === 'P' || node.parentNode.nodeName === 'LI' || node.parentNode.nodeName === 'H1' || node.parentNode.nodeName === 'H2' || node.parentNode.nodeName === 'H3' || node.parentNode.nodeName === 'H4' || node.parentNode.nodeName === 'H5' || node.parentNode.nodeName === 'H6' || node.parentNode.nodeName === 'H3' || node.parentNode.nodeName === 'BLOCKQUOTE' || node.parentNode.nodeName === 'H3')) {
     const [wordWrapColumn, wordWrapMinWidth] = options.wordWrap
     const wrapWidth = Math.max(wordWrapColumn - approxLeftIndent(node), wordWrapMinWidth)
@@ -252,7 +262,10 @@ const wrapContent = (content, node, options) => {
 
 function process (parentNode) {
   var self = this
-  // Note that the root node passed to Turndown isn't translated -- only its children, since the root node is simply a container (a div or body tag) of items to translate. Only the root node's `renderAsPure` attribute is undefined; treat it as pure, since we never translate this node.
+  // Note that the root node passed to Turndown isn't translated -- only its
+  // children, since the root node is simply a container (a div or body tag) of
+  // items to translate. Only the root node's `renderAsPure` attribute is
+  // undefined; treat it as pure, since we never translate this node.
   if (parentNode.renderAsPure || parentNode.renderAsPure === undefined) {
     return reduce.call(parentNode.childNodes, function (output, node) {
       node = new Node(node, self.options)
@@ -280,7 +293,8 @@ function process (parentNode) {
       return join(output, replacement)
     }, '')
   } else {
-    // If the `parentNode` represented itself as raw HTML, that contains all the contents of the child nodes.
+    // If the `parentNode` represented itself as raw HTML, that contains all the
+    // contents of the child nodes.
     return ''
   }
 }
@@ -320,7 +334,9 @@ function replacementForNode (node) {
   if (whitespace.leading || whitespace.trailing) content = content.trim()
   return (
     whitespace.leading +
-    // If this node contains impure content, then it must be replaced with HTML. In this case, the `content` doesn't matter, so it's passed as an empty string.
+    // If this node contains impure content, then it must be replaced with HTML.
+    // In this case, the `content` doesn't matter, so it's passed as an empty
+    // string.
     (node.renderAsPure ? rule.replacement(content, node, this.options) : this.options.defaultReplacement('', node, this.options)) +
     whitespace.trailing
   )
