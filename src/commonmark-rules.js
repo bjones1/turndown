@@ -26,7 +26,11 @@ rules.heading = {
     var hLevel = Number(node.nodeName.charAt(1))
 
     if (options.headingStyle === 'setext' && hLevel < 3) {
-      var underline = repeat((hLevel === 1 ? '=' : '-'), content.length)
+      // Split the contents into lines, then find the longest line length.
+      const splitContent = content.split(/\r\n|\n|\r/)
+      // From [SO](https://stackoverflow.com/a/43304999/16038919).
+      const maxLineLength = Math.max(...(splitContent.map(el => el.length)))
+      var underline = repeat((hLevel === 1 ? '=' : '-'), maxLineLength)
       return (
         '\n\n' + content + '\n' + underline + '\n\n'
       )
@@ -95,13 +99,15 @@ rules.listItem = {
       const suffix = '.'
       const padding = (digits > spaces ? digits + 1 : spaces + 1) + suffix.length // increase padding if beyond 99
       prefix = (itemNumber + suffix).padEnd(padding)
-      content = content.replace(/\n/gm, '\n  '.padEnd(1 + padding))
+      // Indent all non-blank lines.
+      content = content.replace(/\n(.+)/gm, '\n  '.padEnd(1 + padding) + '$1')
     } else {
       prefix = options.bulletListMarker + ' '.padEnd(1 + spaces)
-      content = content.replace(/\n/gm, '\n  '.padEnd(3 + spaces)) // indent
+      // Indent all non-blank lines.
+      content = content.replace(/\n(.+)/gm, '\n  '.padEnd(3 + spaces) + '$1')
     }
     return (
-      prefix + content + (node.nextSibling && !/\n$/.test(content) ? '\n' : '')
+      prefix + content + (node.nextSibling && !content.endsWith('\n\n') ? '\n' : '')
     )
   }
 }
