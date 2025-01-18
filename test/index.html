@@ -1264,7 +1264,7 @@ code
   </div>
   <pre class="expected">&lt;div&gt;&lt;p&gt;&lt;em&gt;Test 1&lt;/em&gt;&lt;/p&gt;&lt;/div&gt;</pre>
 </div>
-  
+
 <!-- Check that newlines in indented code blocks are translated to entities. -->
 <div class="case" data-name="faithful mode, code block" data-options='{"renderAsPure": false}'>
   <div class="input">
@@ -1278,7 +1278,7 @@ code
 &lt;pre&gt;&lt;code&gt;&lt;i&gt;Test
 &amp;#10;2&lt;/i&gt;&lt;/code&gt;&lt;/pre&gt;</pre>
 </div>
-    
+
 <div class="case" data-name="faithful mode, fenced pre/code block with language" data-options='{"codeBlockStyle": "fenced", "renderAsPure": false}'>
   <div class="input">
     <pre><code class="language-ruby"><i>Test
@@ -1298,6 +1298,91 @@ code
     </ol>
   </div>
   <pre class="expected">&lt;ol&gt;&lt;li&gt;Ordered list item 1&lt;/li&gt;&lt;li lang="en"&gt;Ordered list item 2&lt;/li&gt;&lt;li&gt;Ordered list item 3&lt;/li&gt;&lt;/ol&gt;<pre>
+</div>
+
+<!-- Test word wrapping. -->
+<div class="case" data-name="basic word wrapping" data-options='{"wordWrap": [10, 5]}'>
+  <div class="input">
+    <p>foo foo foo foo foo foo</p>
+  </div>
+  <pre class="expected">foo foo
+foo foo
+foo foo</pre>
+</div>
+
+<div class="case" data-name="blockquote word wrapping" data-options='{"wordWrap": [10, 5]}'>
+  <div class="input">
+    <blockquote><p>foo foo foo foo foo foo</p></blockquote>
+  </div>
+  <pre class="expected">&gt; foo foo
+&gt; foo foo
+&gt; foo foo</pre>
+</div>
+
+<div class="case" data-name="double blockquote word wrapping" data-options='{"wordWrap": [10, 5]}'>
+  <div class="input">
+    <blockquote><blockquote><p>foo foo foo foo foo foo</p></blockquote></blockquote>
+  </div>
+  <pre class="expected">&gt; &gt; foo
+&gt; &gt; foo
+&gt; &gt; foo
+&gt; &gt; foo
+&gt; &gt; foo
+&gt; &gt; foo</pre>
+</div>
+
+<div class="case" data-name="min width word wrapping" data-options='{"wordWrap": [10, 10]}'>
+  <div class="input">
+    <blockquote><blockquote><p>foo foo foo foo foo foo</p></blockquote></blockquote>
+  </div>
+  <pre class="expected">&gt; &gt; foo foo
+&gt; &gt; foo foo
+&gt; &gt; foo foo</pre>
+</div>
+
+<div class="case" data-name="ul+p word wrapping" data-options='{"wordWrap": [15, 5]}'>
+  <div class="input">
+    <ul><li><p>foo foo foo foo foo foo</p></li></ul>
+  </div>
+  <pre class="expected">*   foo foo foo
+    foo foo foo</pre>
+</div>
+
+<div class="case" data-name="ul word wrapping" data-options='{"wordWrap": [15, 5]}'>
+  <div class="input">
+    <ul><li>foo foo foo foo foo foo</li></ul>
+  </div>
+  <pre class="expected">*   foo foo foo
+    foo foo foo</pre>
+</div>
+
+<div class="case" data-name="complex ul word wrapping" data-options='{"wordWrap": [15, 10]}'>
+  <div class="input">
+    <ul>
+      <li>
+        <p>foo foo foo foo foo foo</p>
+        <ol>
+          <li>bar bar bar bar bar</li>
+        </ol>
+        <blockquote>baz baz baz baz baz</blockquote>
+        <h1>asdf asdf asdf</h1>
+      </li>
+    </ul>
+  </div>
+  <pre class="expected">*   foo foo foo
+    foo foo foo
+    
+    1.  bar bar
+        bar bar
+        bar
+    
+    > baz baz
+    > baz baz
+    > baz
+    
+    asdf asdf
+    asdf
+    ==============</pre>
 </div>
 
 <!-- /TEST CASES -->

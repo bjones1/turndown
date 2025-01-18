@@ -3,6 +3,8 @@ import Rules from './rules'
 import { extend, trimLeadingNewlines, trimTrailingNewlines } from './utilities'
 import RootNode from './root-node'
 import Node from './node'
+import wrap from 'word-wrap'
+
 var reduce = Array.prototype.reduce
 // Taken from `commonmark.js/lib/common.js`.
 var TAGNAME = '[A-Za-z][A-Za-z0-9-]*'
@@ -98,6 +100,8 @@ export default function TurndownService (options) {
     preformattedCode: false,
     // Should the output be pure (pure Markdown, with no HTML blocks; this discards any HTML input that can't be represented in "pure" Markdown) or faithful (any input HTML that can't be exactly duplicated using Markdwon remains HTML is the resulting output)? This is `false` by default, following the original author's design.
     renderAsPure: true,
+    // An array of [word wrap column, minimum word wrap width] indicates that the output should be word wrapped based on these parameters; otherwise, en empty list indicates no wrapping.
+    wordWrap: [],
     blankReplacement: function (content, node) {
       return node.isBlock ? '\n\n' : ''
     },
@@ -210,6 +214,34 @@ TurndownService.prototype = {
   }
 }
 
+// Determine the approximate left indent.
+const approxLeftIndent = (node) => {
+  let leftIndent = 0
+  while (node.parentNode) {
+    node = node.parentNode
+    if (node.nodeName === 'BLOCKQUOTE') {
+      leftIndent += 2
+    } else if (node.nodeName === 'UL' || node.nodeName === 'OL') {
+      leftIndent += 4
+    }
+  }
+  return leftIndent
+}
+
+// Wrap the provided text if so requested by the options.
+const wrapContent = (content, node, options) => {
+  if (!options.wordWrap.length) {
+    return content
+  }
+  // If the parent node is leaf or container block, then wrap it; otherwise, leave it unchanged. Exceptions: don't wrap code blocks.
+  if (!node.isCode && (node.parentNode.nodeName === 'P' || node.parentNode.nodeName === 'LI' || node.parentNode.nodeName === 'H1' || node.parentNode.nodeName === 'H2' || node.parentNode.nodeName === 'H3' || node.parentNode.nodeName === 'H4' || node.parentNode.nodeName === 'H5' || node.parentNode.nodeName === 'H6' || node.parentNode.nodeName === 'H3' || node.parentNode.nodeName === 'BLOCKQUOTE' || node.parentNode.nodeName === 'H3')) {
+    const [wordWrapColumn, wordWrapMinWidth] = options.wordWrap
+    const wrapWidth = Math.max(wordWrapColumn - approxLeftIndent(node), wordWrapMinWidth)
+    return wrap(content, {width: wrapWidth, indent: '', trim: true})
+  }
+  return content
+}
+
 /**
  * Reduces a DOM node down to its Markdown string equivalent
  * @private
@@ -228,7 +260,7 @@ function process (parentNode) {
       var replacement = ''
       // Is this a text node?
       if (node.nodeType === 3) {
-        replacement = node.isCode ? node.nodeValue : self.escape(node.nodeValue)
+        replacement = node.isCode ? node.nodeValue : wrapContent(self.escape(node.nodeValue), node, self.options)
       // Is this an element node?
       } else if (node.nodeType === 1) {
         replacement = replacementForNode.call(self, node)
