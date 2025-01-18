@@ -2,7 +2,7 @@ import { isBlock, isVoid, hasVoid, isMeaningfulWhenBlank, hasMeaningfulWhenBlank
 
 export default function Node (node, options) {
   node.isBlock = isBlock(node)
-  node.isCode = node.nodeName === 'CODE' || node.parentNode.isCode
+  node.isCode = node.nodeName === 'CODE' || node.nodeName === 'WC-MERMAID' || node.parentNode.isCode
   node.isBlank = isBlank(node)
   node.flankingWhitespace = flankingWhitespace(node, options)
   // When true, this node will be rendered as pure Markdown; false indicates it
