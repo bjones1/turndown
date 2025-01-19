@@ -53,7 +53,9 @@ rules.blockquote = {
 rules.list = {
   filter: ['ul', 'ol'],
   pureAttributes: function (node, options) {
-    // When rendering in faithful mode, check that all children are `<li>` elements that can be faithfully rendered. If not, this must be rendered as HTML.
+    // When rendering in faithful mode, check that all children are `<li>`
+    // elements that can be faithfully rendered. If not, this must be rendered
+    // as HTML.
     if (!options.renderAsPure) {
       var childrenPure = Array.prototype.reduce.call(node.childNodes,
         (previousValue, currentValue) =>
@@ -62,7 +64,8 @@ rules.list = {
           (new Node(currentValue, options)).renderAsPure, true
       )
       if (!childrenPure) {
-        // If any of the children must be rendered as HTML, then this node must also be rendered as HTML.
+        // If any of the children must be rendered as HTML, then this node must
+        // also be rendered as HTML.
         node.renderAsPure = false
         return
       }
@@ -112,6 +115,39 @@ rules.listItem = {
   }
 }
 
+// Determine if a code block is pure. It accepts the following structure:
+//
+// ```HTML
+// <pre>
+//   <code (optional) class="language-xxx">code contents, including newlines</code>
+//   ...then 0 or more of either:
+//   <br>   <-- this is translated to a newline
+//   <code>more code</code>
+// </pre>
+// ```
+let codeBlockPureAttributes = (node, options, isFenced) => {
+  // Check the purity of the child block(s) which contain the code.
+  node.renderAsPure = options.renderAsPure || (node.childNodes.length > 0 && Array.prototype.reduce.call(node.childNodes, (accumulator, childNode) => {
+    const cn = new Node(childNode, options)
+    // All previous siblings are pure and...
+    return accumulator && (
+      // ... it's either a `br` (which cannot have children) ...
+      (cn.nodeName === 'BR' && cn.attributes.length === 0) ||
+      // ... or a `code` element which has ...
+      (cn.nodeName === 'CODE' &&
+        // ... no attributes or (for a fenced code block) a class attribute
+        // containing a language name...
+        (cn.attributes.length === 0 || (isFenced && cn.attributes.length === 1 && cn.className.match(/language-(\S+)/))) &&
+        // ... only one child...
+        cn.childNodes.length === 1 &&
+        // ... containing text, ...
+        cn.firstChild.nodeType === 3
+      )
+    )
+    // ... then this node and its subtree are pure.
+  }, true))
+}
+
 rules.indentedCodeBlock = {
   filter: function (node, options) {
     return (
@@ -122,14 +158,7 @@ rules.indentedCodeBlock = {
     )
   },
 
-  pureAttributes: function (node, options) {
-    // Check the purity of the child block(s) which contain the code.
-    node.renderAsPure = options.renderAsPure || (node.renderAsPure && (
-      // There's only one child (the code element), and it's pure.
-      new Node(node.firstChild, options)).renderAsPure && node.childNodes.length === 1 &&
-      // There's only one child of this code element, and it's text.
-      node.firstChild.childNodes.length === 1 && node.firstChild.firstChild.nodeType === 3)
-  },
+  pureAttributes: (node, options) => codeBlockPureAttributes(node, options, false),
 
   replacement: function (content, node, options) {
     return (
@@ -150,26 +179,14 @@ rules.fencedCodeBlock = {
     )
   },
 
-  pureAttributes: function (node, options) {
-    // Check the purity of the child code element.
-    var firstChild = new Node(node.firstChild, options)
-    var className = firstChild.getAttribute('class') || ''
-    var language = (className.match(/language-(\S+)/) || [null, ''])[1]
-    // Allow the matched classname as pure Markdown. Compare using the `className` attribute, since the `class` attribute returns an object, not an easily-comparable string.
-    if (language) {
-      firstChild.renderAsPure = firstChild.renderAsPure || firstChild.className === `language-${language}`
-    }
-    node.renderAsPure = options.renderAsPure || (node.renderAsPure &&
-      // There's only one child (the code element), and it's pure.
-      firstChild.renderAsPure && node.childNodes.length === 1 &&
-      // There's only one child of this code element, and it's text.
-      node.firstChild.childNodes.length === 1 && node.firstChild.firstChild.nodeType === 3)
-  },
+  pureAttributes: (node, options) => codeBlockPureAttributes(node, options, true),
 
   replacement: function (content, node, options) {
     var className = node.firstChild.getAttribute('class') || ''
     var language = (className.match(/language-(\S+)/) || [null, ''])[1]
-    var code = node.firstChild.textContent
+    // In the HTML, combine the text inside `code` tags while translating `br`
+    // tags to a newline.
+    var code = Array.prototype.reduce.call(node.childNodes, (accumulator, childNode) => accumulator + (childNode.tagName === 'BR' ? '\n' : childNode.textContent), '')
 
     var fenceChar = options.fence.charAt(0)
     var fenceSize = 3

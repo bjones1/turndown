@@ -355,6 +355,16 @@ def a_fenced_code block; end
 ```</pre>
 </div>
 
+<div class="case" data-name="fenced pre/code/br block with language" data-options='{"codeBlockStyle": "fenced", "renderAsPure": false}'>
+  <div class="input">
+    <pre><code class="language-ruby">def a_fenced_code block;</code><br><code>end;</code></pre>
+  </div>
+  <pre class="expected">```ruby
+def a_fenced_code block;
+end;
+```</pre>
+</div>
+
 <div class="case" data-name="empty pre does not throw error">
   <div class="input">
     <pre></pre>
