@@ -1397,6 +1397,16 @@ foo foo</pre>
     =========</pre>
 </div>
 
+<div class="case" data-name="word wrapping with links" data-options='{"wordWrap": [10, 5]}'>
+  <div class="input">
+    <p>foo <a href="http://foo.bar.com">foolink</a> foo foo foo foo</p>
+  </div>
+  <pre class="expected">foo 
+[foolink](http://foo.bar.com)
+foo foo
+foo foo</pre>
+</div>
+
 <!-- /TEST CASES -->
 
 <script src="turndown-test.browser.js"></script>

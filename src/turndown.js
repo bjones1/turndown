@@ -150,6 +150,40 @@ TurndownService.prototype = {
   },
 
   /**
+   * Like `turndown`, but functions like an iterator, so that the HTML to convert
+   * is delivered in a sequnce of calls this method, then a single call to `last`.
+   * @public
+   * @param {String|HTMLElement} input The string or DOM node to convert
+   * @returns A Markdown representation of the input
+   * @type String
+   */
+
+  next: function (input) {
+    if (!canConvert(input)) {
+      throw new TypeError(
+        input + ' is not a string, or an element/document/fragment node.'
+      )
+    }
+
+    if (input === '') return ''
+
+    var output = process.call(this, new RootNode(input, this.options))
+    return cleanEmptyLines(output)
+  },
+
+  /**
+   * See `next`; this finalizes the Markdown output produced by call to `next`.
+   * @public
+   * @param {String|HTMLElement} input The string or DOM node to convert
+   * @returns A Markdown representation of the input
+   * @type String
+   */
+
+  last: function (input) {
+    this.turndown(input)
+  },
+
+  /**
    * Add one or more plugins
    * @public
    * @param {Function|Array} plugin The plugin or array of plugins to add
@@ -223,7 +257,8 @@ TurndownService.prototype = {
   }
 }
 
-// Determine the approximate left indent.
+// Determine the approximate left indent. It will be incorrect for list items
+// whose numbers are over two digits.
 const approxLeftIndent = (node) => {
   let leftIndent = 0
   while (node.parentNode) {
@@ -247,6 +282,7 @@ const wrapContent = (content, node, options) => {
   if (!node.isCode && (node.parentNode.nodeName === 'P' || node.parentNode.nodeName === 'LI' || node.parentNode.nodeName === 'H1' || node.parentNode.nodeName === 'H2' || node.parentNode.nodeName === 'H3' || node.parentNode.nodeName === 'H4' || node.parentNode.nodeName === 'H5' || node.parentNode.nodeName === 'H6' || node.parentNode.nodeName === 'H3' || node.parentNode.nodeName === 'BLOCKQUOTE' || node.parentNode.nodeName === 'H3')) {
     const [wordWrapColumn, wordWrapMinWidth] = options.wordWrap
     const wrapWidth = Math.max(wordWrapColumn - approxLeftIndent(node), wordWrapMinWidth)
+    console.log(content, wrapWidth)
     return wrap(content, {width: wrapWidth, indent: '', trim: true})
   }
   return content
@@ -315,8 +351,13 @@ function postProcess (output) {
     }
   })
 
-  return output.replace(/^[\t\r\n]+/, '').replace(/[\t\r\n\s]+$/, '')
+  return cleanEmptyLines(output)
 }
+
+// Remove extraneous newlines/tabs at the beginning and end of lines. This is
+// a postprocessing method to call just before returning the converted Markdown
+// output.
+const cleanEmptyLines = (output) => output.replace(/^[\t\r\n]+/, '').replace(/[\t\r\n\s]+$/, '')
 
 /**
  * Converts an element node to its Markdown equivalent
