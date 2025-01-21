@@ -731,7 +731,7 @@ Another div</pre>
       <li>
         <strong>Strong with trailing space inside li with leading/trailing whitespace </strong> </li>
       <li>li without whitespace</li>
-      <li> Leading space, text, lots of whitespace â€¦
+      <li> Leading space, text, lots of whitespace …
                           text
       </li>
     </ol>
@@ -739,7 +739,7 @@ Another div</pre>
   <pre class="expected">*   Indented li with leading/trailing newlines
 *   **Strong with trailing space inside li with leading/trailing whitespace**
 *   li without whitespace
-*   Leading space, text, lots of whitespace â€¦ text</pre>
+*   Leading space, text, lots of whitespace … text</pre>
 </div>
 
 <div class="case" data-name="whitespace between inline elements" data-options='{"renderAsPure": false}'>
@@ -768,16 +768,16 @@ before continuation</pre>
 
 <div class="case" data-name="blank inline elements">
   <div class="input">
-    Text before blank em â€¦ <em></em> text after blank em
+    Text before blank em … <em></em> text after blank em
   </div>
-  <pre class="expected">Text before blank em â€¦ text after blank em</pre>
+  <pre class="expected">Text before blank em … text after blank em</pre>
 </div>
 
 <div class="case" data-name="blank block elements">
   <div class="input">
-    Text before blank div â€¦ <div></div> text after blank div
+    Text before blank div … <div></div> text after blank div
   </div>
-  <pre class="expected">Text before blank div â€¦
+  <pre class="expected">Text before blank div …
 
 text after blank div</pre>
 </div>
@@ -1374,7 +1374,7 @@ foo foo</pre>
       <li>
         <p>foo foo foo foo foo foo</p>
         <ol>
-          <li>bar bar bar bar bar</li>
+          <li>bar <em>bar</em> bar bar bar</li>
         </ol>
         <blockquote>baz baz baz baz baz</blockquote>
         <h1>asdf asdf asdf</h1>
@@ -1384,7 +1384,7 @@ foo foo</pre>
   <pre class="expected">*   foo foo foo
     foo foo foo
 
-    1.  bar bar
+    1.  bar *bar*
         bar bar
         bar
 
@@ -1401,7 +1401,7 @@ foo foo</pre>
   <div class="input">
     <p>foo <a href="http://foo.bar.com">foolink</a> foo foo foo foo</p>
   </div>
-  <pre class="expected">foo 
+  <pre class="expected">foo
 [foolink](http://foo.bar.com)
 foo foo
 foo foo</pre>

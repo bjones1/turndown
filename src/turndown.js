@@ -1,9 +1,8 @@
-import COMMONMARK_RULES from './commonmark-rules'
+import { rules as COMMONMARK_RULES, wrapContent } from './commonmark-rules'
 import Rules from './rules'
 import { extend, trimLeadingNewlines, trimTrailingNewlines } from './utilities'
 import RootNode from './root-node'
 import Node from './node'
-import wrap from 'word-wrap'
 
 var reduce = Array.prototype.reduce
 // Taken from `commonmark.js/lib/common.js`.
@@ -257,36 +256,10 @@ TurndownService.prototype = {
   }
 }
 
-// Determine the approximate left indent. It will be incorrect for list items
-// whose numbers are over two digits.
-const approxLeftIndent = (node) => {
-  let leftIndent = 0
-  while (node.parentNode) {
-    node = node.parentNode
-    if (node.nodeName === 'BLOCKQUOTE') {
-      leftIndent += 2
-    } else if (node.nodeName === 'UL' || node.nodeName === 'OL') {
-      leftIndent += 4
-    }
-  }
-  return leftIndent
-}
-
-// Wrap the provided text if so requested by the options.
-const wrapContent = (content, node, options) => {
-  if (!options.wordWrap.length) {
-    return content
-  }
-  // If the parent node is leaf or container block, then wrap it; otherwise,
-  // leave it unchanged. Exceptions: don't wrap code blocks.
-  if (!node.isCode && (node.parentNode.nodeName === 'P' || node.parentNode.nodeName === 'LI' || node.parentNode.nodeName === 'H1' || node.parentNode.nodeName === 'H2' || node.parentNode.nodeName === 'H3' || node.parentNode.nodeName === 'H4' || node.parentNode.nodeName === 'H5' || node.parentNode.nodeName === 'H6' || node.parentNode.nodeName === 'H3' || node.parentNode.nodeName === 'BLOCKQUOTE' || node.parentNode.nodeName === 'H3')) {
-    const [wordWrapColumn, wordWrapMinWidth] = options.wordWrap
-    const wrapWidth = Math.max(wordWrapColumn - approxLeftIndent(node), wordWrapMinWidth)
-    console.log(content, wrapWidth)
-    return wrap(content, {width: wrapWidth, indent: '', trim: true})
-  }
-  return content
-}
+// These HTML elements are considered block nodes, as opposed to inline nodes. It's based on the Commonmark spec's selection of [HTML blocks](https://spec.commonmark.org/0.31.2/#html-blocks).
+const blockNodeNames = new Set([
+  'PRE', 'SCRIPT', 'STYLE', 'TEXTAREA', 'ADDRESS', 'ARTICLE', 'ASIDE', 'BASE', 'BASEFONT', 'BLOCKQUOTE', 'BODY', 'CAPTION', 'CENTER', 'COL', 'COLGROUP', 'DD', 'DETAILS', 'DIALOG', 'DIR', 'DIV', 'DL', 'DT', 'FIELDSET', 'FIGCAPTION', 'FIGURE', 'FOOTER', 'FORM', 'FRAME', 'FRAMESET', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'HEAD', 'HEADER', 'HR', 'HTML', 'IFRAME', 'LEGEND', 'LI', 'LINK', 'MAIN', 'MENU', 'MENUITEM', 'NAV', 'NOFRAMES', 'OL', 'OPTGROUP', 'OPTION', 'P', 'PARAM', 'SEARCH', 'SECTION', 'SUMMARY', 'TABLE', 'TBODY', 'TD', 'TFOOT', 'TH', 'THEAD', 'TITLE', 'TR', 'TRACK', 'UL'
+])
 
 /**
  * Reduces a DOM node down to its Markdown string equivalent
@@ -298,36 +271,54 @@ const wrapContent = (content, node, options) => {
 
 function process (parentNode) {
   var self = this
+  const isLi = parentNode.nodeName === 'LI'
   // Note that the root node passed to Turndown isn't translated -- only its
   // children, since the root node is simply a container (a div or body tag) of
   // items to translate. Only the root node's `renderAsPure` attribute is
   // undefined; treat it as pure, since we never translate this node.
   if (parentNode.renderAsPure || parentNode.renderAsPure === undefined) {
-    return reduce.call(parentNode.childNodes, function (output, node) {
+    const output = reduce.call(parentNode.childNodes, function (output, node) {
+      // `output` consists of [output so far, li accumulator]. For non-li nodes, this node's output is added to the output so far. Otherwise, accumulate content for wrapping. Wrap accumulation rules: accumulate any text and non-block node; wrap the accumulator when on a non-accumulating node.
       node = new Node(node, self.options)
 
       var replacement = ''
+      const nodeType = node.nodeType
       // Is this a text node?
-      if (node.nodeType === 3) {
-        replacement = node.isCode ? node.nodeValue : wrapContent(self.escape(node.nodeValue), node, self.options)
+      if (nodeType === 3) {
+        replacement = node.isCode ? node.nodeValue : self.escape(node.nodeValue)
       // Is this an element node?
-      } else if (node.nodeType === 1) {
+      } else if (nodeType === 1) {
         replacement = replacementForNode.call(self, node)
       // In faithful mode, return the contents for these special cases.
       } else if (!self.options.renderAsPure) {
-        if (node.nodeType === 4) {
+        if (nodeType === 4) {
           replacement = `<!CDATA[[${node.nodeValue}]]>`
-        } else if (node.nodeType === 7) {
+        } else if (nodeType === 7) {
           replacement = `<?${node.nodeValue}?>`
-        } else if (node.nodeType === 8) {
+        } else if (nodeType === 8) {
           replacement = `<!--${node.nodeValue}-->`
-        } else if (node.nodeType === 10) {
+        } else if (nodeType === 10) {
           replacement = `<!${node.nodeValue}>`
+        } else {
+          console.log(`Error: unexpected node type ${nodeType}.`)
         }
       }
 
-      return join(output, replacement)
-    }, '')
+      if (isLi) {
+        // Is this a non-accumulating node?
+        if (nodeType > 3 || (nodeType === 1 && blockNodeNames.has(node.nodeName))) {
+          // This is a non-accumulating node. Wrap the accumulated content, then clear the accumulator.
+          const wrappedAccumulator = wrapContent(output[1], node, self.options)
+          return [join(join(wrappedAccumulator, output[0]), replacement), '']
+        } else {
+          // This is an accumulating node, so add this to the accumulator.
+          return [output[0], join(output[1], replacement)]
+        }
+      } else {
+        return [join(output[0], replacement), '']
+      }
+    }, ['', ''])
+    return join(output[0], wrapContent(output[1], parentNode, self.options))
   } else {
     // If the `parentNode` represented itself as raw HTML, that contains all the
     // contents of the child nodes.

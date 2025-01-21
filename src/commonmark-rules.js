@@ -1,13 +1,39 @@
 import Node from './node'
 import { repeat } from './utilities'
+import wrap from 'word-wrap'
 
-var rules = {}
+// Determine the approximate left indent. It will be incorrect for list items
+// whose numbers are over two digits.
+const approxLeftIndent = (node) => {
+  let leftIndent = 0
+  while (node) {
+    if (node.nodeName === 'BLOCKQUOTE') {
+      leftIndent += 2
+    } else if (node.nodeName === 'UL' || node.nodeName === 'OL') {
+      leftIndent += 4
+    }
+    node = node.parentNode
+  }
+  return leftIndent
+}
+
+// Wrap the provided text if so requested by the options.
+export const wrapContent = (content, node, options) => {
+  if (!options.wordWrap.length) {
+    return content
+  }
+  const [wordWrapColumn, wordWrapMinWidth] = options.wordWrap
+  const wrapWidth = Math.max(wordWrapColumn - approxLeftIndent(node), wordWrapMinWidth)
+  return wrap(content, {width: wrapWidth, indent: '', trim: true})
+}
+
+export var rules = {}
 
 rules.paragraph = {
   filter: 'p',
 
-  replacement: function (content) {
-    return '\n\n' + content + '\n\n'
+  replacement: function (content, node, options) {
+    return '\n\n' + wrapContent(content, node, options) + '\n\n'
   }
 }
 
@@ -23,6 +49,7 @@ rules.heading = {
   filter: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
 
   replacement: function (content, node, options) {
+    content = wrapContent(content, node, options)
     var hLevel = Number(node.nodeName.charAt(1))
 
     if (options.headingStyle === 'setext' && hLevel < 3) {
@@ -43,7 +70,8 @@ rules.heading = {
 rules.blockquote = {
   filter: 'blockquote',
 
-  replacement: function (content) {
+  replacement: function (content, node, options) {
+    content = wrapContent(content, node, options)
     content = content.replace(/^\n+|\n+$/g, '')
     content = content.replace(/^/gm, '> ')
     return '\n\n' + content + '\n\n'
@@ -372,5 +400,3 @@ rules.image = {
 function cleanAttribute (attribute) {
   return attribute ? attribute.replace(/(\n+\s*)+/g, '\n') : ''
 }
-
-export default rules
