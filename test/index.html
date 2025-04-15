@@ -1407,6 +1407,23 @@ foo foo
 foo foo</pre>
 </div>
 
+<div class="case" data-name="word wrapping with headings" data-options='{"wordWrap": [10, 5]}'>
+  <div class="input">
+    <h1>Testing Testing</h1>
+    <h2>Testing Testing</h2>
+    <h3>Testing Testing</h3>
+  </div>
+  <pre class="expected">Testing
+Testing
+=======
+
+Testing
+Testing
+-------
+
+### Testing Testing</pre>
+</div>
+
 <!-- /TEST CASES -->
 
 <script src="turndown-test.browser.js"></script>
